@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+
 use App\Models\Post;
 
 class PostController extends Controller
@@ -15,7 +18,8 @@ class PostController extends Controller
     public function index()
     {
         // get all posts
-        return Post::all();
+        $post = Post::all();
+        return response()->json($post, 200);
     }
 
     /**
@@ -26,8 +30,19 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        // create a post
-        return Post::create($request->all());
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|max:255',
+            'slug' =>   'required',
+            'content' => 'required|max:255'
+        ]);
+
+        if($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
+        $newPost = Post::create($request->all());
+        return response()->json($newPost, 201);
     }
 
     /**
@@ -39,7 +54,11 @@ class PostController extends Controller
     public function show($id)
     {
         // show a post
-        return Post::find($id);
+        $post = Post::find($id);
+        if(is_null($post)){
+            return response()->json(["message" => "Post not found"], 404);
+        }
+        return response()->json($post, 200);
     }
 
     /**
@@ -53,6 +72,9 @@ class PostController extends Controller
     {
         // update a post
         $post = Post::find($id);
+        if(is_null($post)){
+            return response()->json(["message" => "Post not found"], 404);
+        }
         $post->update($request->all());
         return $post;
     }
@@ -63,9 +85,14 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         // delete a post
-        return Post::destroy($id);
+        $post = Post::destroy($id);
+        return response()->json([
+            "message" => "Post Deleted!"
+            ],
+             204
+            );
     }
 }
